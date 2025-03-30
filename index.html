@@ -11,32 +11,74 @@
   <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
   <style>
+    :root {
+      --primary: #4CAF50;
+      --secondary: #2E7D32;
+    }
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Roboto', Arial, sans-serif;
       max-width: 800px;
       margin: 0 auto;
-      padding: 20px;
-      direction: ltr;
+      padding: 15px;
+      line-height: 1.6;
+      color: #333;
     }
-    button, .ussd-button {
-      background: #4CAF50;
+    .rtl {
+      direction: rtl;
+      text-align: right;
+    }
+    h1, h2 {
+      color: var(--secondary);
+    }
+    button, .btn {
+      background: var(--primary);
       color: white;
       border: none;
       padding: 10px 15px;
       border-radius: 5px;
       cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-      margin: 5px 0;
-    }
-    input, select {
-      padding: 8px;
+      font-size: 16px;
       margin: 5px 0;
       width: 100%;
-      box-sizing: border-box;
     }
-    .rtl {
-      direction: rtl;
+    input, select {
+      padding: 10px;
+      margin: 8px 0;
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .container {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+    .hidden {
+      display: none;
+    }
+    #language {
+      width: auto;
+      padding: 8px;
+      margin-bottom: 15px;
+    }
+    .payment-item {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .member-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      button, input {
+        padding: 12px;
+      }
     }
   </style>
 </head>
@@ -49,40 +91,74 @@
     <option value="om">Oromoo</option>
   </select>
 
-  <h1 id="title">Welcome to Equb App</h1>
+  <h1 id="title">Equb App</h1>
   
-  <!-- User Authentication -->
-  <div id="auth-container">
-    <h2 id="signup-title">Sign Up</h2>
+  <!-- Authentication -->
+  <div id="auth-container" class="container">
+    <h2 id="auth-title">Sign In</h2>
     <input type="email" id="email" placeholder="Email">
     <input type="password" id="password" placeholder="Password">
+    <button onclick="signIn()" id="signin-btn">Sign In</button>
+    <p id="auth-switch">Don't have an account? <a href="#" onclick="showSignUp()">Sign Up</a></p>
+  </div>
+
+  <!-- Sign Up Form -->
+  <div id="signup-container" class="container hidden">
+    <h2 id="signup-title">Create Account</h2>
+    <input type="text" id="name" placeholder="Full Name">
+    <input type="tel" id="phone" placeholder="Phone Number">
+    <input type="email" id="new-email" placeholder="Email">
+    <input type="password" id="new-password" placeholder="Password">
     <button onclick="signUp()" id="signup-btn">Create Account</button>
+    <p id="signup-switch">Already have an account? <a href="#" onclick="showSignIn()">Sign In</a></p>
   </div>
 
-  <!-- Equb Creation -->
-  <div id="equb-container" style="display:none;">
-    <h2 id="create-title">Create New Equb</h2>
-    <input type="text" id="equb-name" placeholder="Equb Name">
-    <input type="number" id="equb-amount" placeholder="Amount (ETB)">
-    <button onclick="createEqub()" id="create-btn">Start Equb</button>
-  </div>
+  <!-- Main App -->
+  <div id="app-container" class="hidden">
+    <!-- Equb Management -->
+    <div class="container">
+      <h2 id="equb-title">My Equbs</h2>
+      <div id="equb-list"></div>
+      <button onclick="showCreateEqub()" id="new-equb-btn">Create New Equb</button>
+    </div>
 
-  <!-- Payment Tracking -->
-  <div id="payment-container" style="display:none; margin-top:20px;">
-    <h2 id="payment-title">Payment Tracking</h2>
-    <div id="payments-list"></div>
-    <input type="number" id="payment-amount" placeholder="Amount (ETB)">
-    <button onclick="recordPayment()" id="pay-btn">Record Payment</button>
-  </div>
+    <!-- Create Equb -->
+    <div id="create-equb-container" class="container hidden">
+      <h2 id="create-title">New Equb</h2>
+      <input type="text" id="equb-name" placeholder="Equb Name">
+      <input type="number" id="equb-amount" placeholder="Amount (ETB)">
+      <input type="number" id="equb-cycle" placeholder="Cycle (days)">
+      <button onclick="createEqub()" id="create-btn">Create Equb</button>
+    </div>
 
-  <!-- USSD Option -->
-  <div style="margin-top: 30px;">
-    <p id="ussd-text">No smartphone? Dial:</p>
-    <a href="tel:*384*12345%23" class="ussd-button" id="ussd-btn">*384*12345#</a>
+    <!-- Equb Details -->
+    <div id="equb-details" class="container hidden">
+      <h2 id="detail-title">Equb Details</h2>
+      <p id="equb-info"></p>
+      <div id="member-list"></div>
+      <input type="text" id="invite-email" placeholder="Member Email">
+      <button onclick="inviteMember()" id="invite-btn">Invite Member</button>
+    </div>
+
+    <!-- Payment Tracking -->
+    <div class="container">
+      <h2 id="payment-title">Payments</h2>
+      <div id="payment-list"></div>
+      <input type="number" id="payment-amount" placeholder="Amount (ETB)">
+      <button onclick="recordPayment()" id="pay-btn">Record Payment</button>
+    </div>
+
+    <!-- USSD Option -->
+    <div class="container">
+      <p id="ussd-text">For feature phones:</p>
+      <a href="tel:*384*12345%23" class="btn" id="ussd-btn">*384*12345#</a>
+    </div>
   </div>
 
   <script>
-    // Initialize Firebase
+    // ======================
+    // Firebase Configuration
+    // ======================
     const firebaseConfig = {
       apiKey: "AIzaSyBuifsUfU-VvKCiavN-pdJtdx9Ennadth0",
       authDomain: "equb-web.firebaseapp.com",
@@ -92,82 +168,171 @@
       appId: "1:737801237955:web:81617dfc5e85f347d0f976"
     };
     firebase.initializeApp(firebaseConfig);
-
-    // Firebase services
     const auth = firebase.auth();
     const db = firebase.firestore();
 
-    // Language translations
+    // =================
+    // Multilingual Support
+    // =================
     const translations = {
       en: {
-        title: "Welcome to Equb App",
-        signupTitle: "Sign Up",
+        title: "Equb App",
+        authTitle: "Sign In",
         emailPlaceholder: "Email",
         passwordPlaceholder: "Password",
+        signinBtn: "Sign In",
+        authSwitch: "Don't have an account? ",
+        signupTitle: "Create Account",
+        namePlaceholder: "Full Name",
+        phonePlaceholder: "Phone Number",
         signupBtn: "Create Account",
-        createTitle: "Create New Equb",
-        namePlaceholder: "Equb Name",
+        signupSwitch: "Already have an account? ",
+        equbTitle: "My Equbs",
+        newEqubBtn: "Create New Equb",
+        createTitle: "New Equb",
         amountPlaceholder: "Amount (ETB)",
-        createBtn: "Start Equb",
-        paymentTitle: "Payment Tracking",
+        cyclePlaceholder: "Cycle (days)",
+        createBtn: "Create Equb",
+        detailTitle: "Equb Details",
+        invitePlaceholder: "Member Email",
+        inviteBtn: "Invite Member",
+        paymentTitle: "Payments",
         payBtn: "Record Payment",
-        ussdText: "No smartphone? Dial:",
+        ussdText: "For feature phones:",
         ussdBtn: "*384*12345#",
         success: "Success!",
-        error: "Error: "
+        error: "Error: ",
+        join: "Join",
+        members: "Members",
+        payments: "Payments",
+        status: "Status",
+        active: "Active",
+        pending: "Pending",
+        yourTurn: "Your turn!",
+        nextPayout: "Next payout: ",
+        noEqubs: "No equbs yet. Create one!"
       },
       am: {
-        title: "ወደ እኩብ መተግበሪያ እንኳን ደህና መጡ",
-        signupTitle: "ይመዝገቡ",
+        title: "እኩብ መተግበሪያ",
+        authTitle: "ግባ",
         emailPlaceholder: "ኢሜይል",
         passwordPlaceholder: "ይለፍ ቃል",
+        signinBtn: "ግባ",
+        authSwitch: "መለያ የሎትህ? ",
+        signupTitle: "መለያ ይፍጠሩ",
+        namePlaceholder: "ሙሉ ስም",
+        phonePlaceholder: "ስልክ ቁጥር",
         signupBtn: "መለያ ይፍጠሩ",
-        createTitle: "አዲስ እኩብ ይፍጠሩ",
-        namePlaceholder: "የእኩብ ስም",
+        signupSwitch: "አስቀድሞ መለያ አለህ? ",
+        equbTitle: "የእኔ እኩቦች",
+        newEqubBtn: "አዲስ እኩብ ይፍጠሩ",
+        createTitle: "አዲስ እኩብ",
         amountPlaceholder: "መጠን (ብር)",
-        createBtn: "እኩብ ጀምር",
-        paymentTitle: "ክፍያ መከታተያ",
+        cyclePlaceholder: "ዑደት (ቀናት)",
+        createBtn: "እኩብ ይፍጠሩ",
+        detailTitle: "የእኩብ ዝርዝሮች",
+        invitePlaceholder: "አባል ኢሜይል",
+        inviteBtn: "አባል ይጋብዙ",
+        paymentTitle: "ክፍያዎች",
         payBtn: "ክፍያ ይመዝግቡ",
-        ussdText: "ስልክ የለህም? ይደውሉ:",
+        ussdText: "ለቀላል ስልኮች:",
         ussdBtn: "*384*12345#",
         success: "ተሳክቷል!",
-        error: "ስህተት: "
+        error: "ስህተት: ",
+        join: "ተቀላቀል",
+        members: "አባሎች",
+        payments: "ክፍያዎች",
+        status: "ሁኔታ",
+        active: "ንቁ",
+        pending: "በጥበቃ",
+        yourTurn: "ተራህ ነው!",
+        nextPayout: "የሚቀጥለው ክፍያ: ",
+        noEqubs: "እንዲህ ያለ እኩብ የለም። አዲስ ይፍጠሩ!"
       },
       ti: {
-        title: "እንቋዕ ናብ እኩብ መተግበሪያ ብደሓን መጻእኩም",
-        signupTitle: "ተመዝገብ",
+        title: "እኩብ መተግበሪያ",
+        authTitle: "እቶ",
         emailPlaceholder: "ኢመይል",
         passwordPlaceholder: "መሕለፊ ቃል",
+        signinBtn: "እቶ",
+        authSwitch: "ሕሳብ የብልካን? ",
+        signupTitle: "ሕሳብ ፍጠር",
+        namePlaceholder: "ምሉእ ስም",
+        phonePlaceholder: "ቁጽሪ ስልኪ",
         signupBtn: "ሕሳብ ፍጠር",
-        createTitle: "ሓድሽ እኩብ ፍጠር",
-        namePlaceholder: "ስም እኩብ",
+        signupSwitch: "ቀደም ሕሳብ ኣለካ? ",
+        equbTitle: "ናተይ እኩባት",
+        newEqubBtn: "ሓድሽ እኩብ ፍጠር",
+        createTitle: "ሓድሽ እኩብ",
         amountPlaceholder: "ገንዘብ (ብር)",
-        createBtn: "እኩብ ጀምር",
-        paymentTitle: "ክፍሊት መክትተል",
+        cyclePlaceholder: "ዑደት (ዕለታት)",
+        createBtn: "እኩብ ፍጠር",
+        detailTitle: "ዝርዝር እኩብ",
+        invitePlaceholder: "ኣባል ኢመይል",
+        inviteBtn: "ኣባል ዕርዶ",
+        paymentTitle: "ክፍሊታት",
         payBtn: "ክፍሊት መዝግብ",
-        ussdText: "ስማርትፎን የብልካን፧ ደውሉ፦",
+        ussdText: "ንባህሪ ስልኪ:",
         ussdBtn: "*384*12345#",
         success: "ተሳክቷል!",
-        error: "ጌጋ: "
+        error: "ጌጋ: ",
+        join: "ተጸንበር",
+        members: "ኣባላት",
+        payments: "ክፍሊታት",
+        status: "ስታተስ",
+        active: "ንቑር",
+        pending: "ብጽቢት",
+        yourTurn: "ዕድልካ እዩ!",
+        nextPayout: "ዝቕጽል ክፍሊት: ",
+        noEqubs: "እኩብ የለን። ሓድሽ ፍጠር!"
       },
       om: {
-        title: "Equb App kanaa bilisoomfadha",
-        signupTitle: "Galmaa'uu",
+        title: "Appii Equb",
+        authTitle: "Seeni",
         emailPlaceholder: "Imeelii",
-        passwordPlaceholder: "Jecha darbii",
+        passwordPlaceholder: "Jecha iccitii",
+        signinBtn: "Seeni",
+        authSwitch: "Akkaawuntii hin qabduu? ",
+        signupTitle: "Akkaawuntii uumu",
+        namePlaceholder: "Maqaa guutuu",
+        phonePlaceholder: "Lakkoofsa bilbila",
         signupBtn: "Akkaawuntii uumu",
-        createTitle: "Equb haaraa uumu",
-        namePlaceholder: "Maqaa equbii",
+        signupSwitch: "Akkaawuntii qabduu? ",
+        equbTitle: "Equb koo",
+        newEqubBtn: "Equb haaraa uumu",
+        createTitle: "Equb haaraa",
         amountPlaceholder: "Qarshii (Birr)",
-        createBtn: "Equb jalqabi",
-        paymentTitle: "Kaffaltii hordofuu",
+        cyclePlaceholder: "Guyyaa (Guyyoota)",
+        createBtn: "Equb uumu",
+        detailTitle: "Odeeffannoo equbii",
+        invitePlaceholder: "Imeelii miseensa",
+        inviteBtn: "Miseensa waami",
+        paymentTitle: "Kaffaltiwwan",
         payBtn: "Kaffaltii galmeessi",
-        ussdText: "Smartphone hin qabduu? Bilbilaa:",
+        ussdText: "Bilbilaa seenaa:",
         ussdBtn: "*384*12345#",
         success: "Milkaa'inaan!",
-        error: "Dogoggora: "
+        error: "Dogoggora: ",
+        join: "Makuu",
+        members: "Miseensota",
+        payments: "Kaffaltiwwan",
+        status: "Haala",
+        active: "Hojii irra jira",
+        pending: "Eegama",
+        yourTurn: "Turns kee!",
+        nextPayout: "Kaffalti itti aanu: ",
+        noEqubs: "Equb hin jiru. Kan haaraa uumu!"
       }
     };
+
+    // ================
+    // Core Functions
+    // ================
+
+    // Initialize the app
+    let currentUser = null;
+    let currentEqub = null;
+    const t = translations.en; // Default language
 
     // Change language
     function changeLanguage() {
@@ -176,83 +341,348 @@
       
       // Update all text elements
       document.getElementById('title').textContent = t.title;
-      document.getElementById('signup-title').textContent = t.signupTitle;
+      
+      // Auth Container
+      document.getElementById('auth-title').textContent = t.authTitle;
       document.getElementById('email').placeholder = t.emailPlaceholder;
       document.getElementById('password').placeholder = t.passwordPlaceholder;
+      document.getElementById('signin-btn').textContent = t.signinBtn;
+      document.getElementById('auth-switch').innerHTML = t.authSwitch + '<a href="#" onclick="showSignUp()">' + t.signupBtn + '</a>';
+      
+      // Sign Up Container
+      document.getElementById('signup-title').textContent = t.signupTitle;
+      document.getElementById('name').placeholder = t.namePlaceholder;
+      document.getElementById('phone').placeholder = t.phonePlaceholder;
+      document.getElementById('new-email').placeholder = t.emailPlaceholder;
+      document.getElementById('new-password').placeholder = t.passwordPlaceholder;
       document.getElementById('signup-btn').textContent = t.signupBtn;
+      document.getElementById('signup-switch').innerHTML = t.signupSwitch + '<a href="#" onclick="showSignIn()">' + t.signinBtn + '</a>';
+      
+      // App Container
+      document.getElementById('equb-title').textContent = t.equbTitle;
+      document.getElementById('new-equb-btn').textContent = t.newEqubBtn;
+      
+      // Create Equb
       document.getElementById('create-title').textContent = t.createTitle;
       document.getElementById('equb-name').placeholder = t.namePlaceholder;
       document.getElementById('equb-amount').placeholder = t.amountPlaceholder;
+      document.getElementById('equb-cycle').placeholder = t.cyclePlaceholder;
       document.getElementById('create-btn').textContent = t.createBtn;
+      
+      // Equb Details
+      document.getElementById('detail-title').textContent = t.detailTitle;
+      document.getElementById('invite-email').placeholder = t.invitePlaceholder;
+      document.getElementById('invite-btn').textContent = t.inviteBtn;
+      
+      // Payments
       document.getElementById('payment-title').textContent = t.paymentTitle;
       document.getElementById('pay-btn').textContent = t.payBtn;
+      
+      // USSD
       document.getElementById('ussd-text').textContent = t.ussdText;
       document.getElementById('ussd-btn').textContent = t.ussdBtn;
       
       // Set RTL for Amharic/Tigrinya
       document.body.className = lang === 'am' || lang === 'ti' ? 'rtl' : '';
+      
+      // Refresh data display if logged in
+      if (currentUser) {
+        loadEqubs();
+        if (currentEqub) loadEqubDetails();
+      }
     }
 
-    // Sign up function
-    function signUp() {
-      const lang = document.getElementById('language').value;
-      const t = translations[lang];
+    // Auth functions
+    function showSignUp() {
+      document.getElementById('auth-container').classList.add('hidden');
+      document.getElementById('signup-container').classList.remove('hidden');
+    }
+
+    function showSignIn() {
+      document.getElementById('signup-container').classList.add('hidden');
+      document.getElementById('auth-container').classList.remove('hidden');
+    }
+
+    function signIn() {
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
+      const lang = document.getElementById('language').value;
+      const t = translations[lang];
 
-      auth.createUserWithEmailAndPassword(email, password)
+      auth.signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
-          document.getElementById('auth-container').style.display = 'none';
-          document.getElementById('equb-container').style.display = 'block';
-          document.getElementById('payment-container').style.display = 'block';
-          alert(t.success);
+          currentUser = userCredential.user;
+          showApp();
+          loadEqubs();
         })
         .catch((error) => {
           alert(t.error + error.message);
         });
     }
 
-    // Create Equb function
-    function createEqub() {
+    function signUp() {
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      const email = document.getElementById('new-email').value;
+      const password = document.getElementById('new-password').value;
       const lang = document.getElementById('language').value;
       const t = translations[lang];
-      const name = document.getElementById('equb-name').value;
-      const amount = document.getElementById('equb-amount').value;
-      const userId = auth.currentUser.uid;
 
-      db.collection("equbs").add({
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          currentUser = userCredential.user;
+          
+          // Save additional user data
+          return db.collection('users').doc(currentUser.uid).set({
+            name: name,
+            phone: phone,
+            email: email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        })
+        .then(() => {
+          showApp();
+          loadEqubs();
+        })
+        .catch((error) => {
+          alert(t.error + error.message);
+        });
+    }
+
+    function showApp() {
+      document.getElementById('auth-container').classList.add('hidden');
+      document.getElementById('signup-container').classList.add('hidden');
+      document.getElementById('app-container').classList.remove('hidden');
+    }
+
+    // Equb functions
+    function showCreateEqub() {
+      document.getElementById('create-equb-container').classList.remove('hidden');
+    }
+
+    function createEqub() {
+      const name = document.getElementById('equb-name').value;
+      const amount = parseFloat(document.getElementById('equb-amount').value);
+      const cycle = parseInt(document.getElementById('equb-cycle').value);
+      const lang = document.getElementById('language').value;
+      const t = translations[lang];
+
+      if (!name || !amount || !cycle) {
+        alert(t.error + "Please fill all fields");
+        return;
+      }
+
+      db.collection('equbs').add({
         name: name,
         amount: amount,
-        creator: userId,
-        members: [userId],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        cycle: cycle,
+        creator: currentUser.uid,
+        members: [currentUser.uid],
+        payments: [],
+        status: 'active',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        nextPayout: null
       })
-      .then(() => {
-        alert(t.success);
+      .then((docRef) => {
+        document.getElementById('create-equb-container').classList.add('hidden');
+        document.getElementById('equb-name').value = '';
+        document.getElementById('equb-amount').value = '';
+        document.getElementById('equb-cycle').value = '';
+        loadEqubs();
       })
       .catch((error) => {
-        alert(t.error + error);
+        alert(t.error + error.message);
       });
     }
 
-    // Record payment
-    function recordPayment() {
-      const amount = document.getElementById('payment-amount').value;
-      const paymentsList = document.getElementById('payments-list');
-      const paymentItem = document.createElement('div');
-      paymentItem.textContent = `Payment: ${amount} ETB - ${new Date().toLocaleString()}`;
-      paymentsList.appendChild(paymentItem);
-      document.getElementById('payment-amount').value = '';
+    function loadEqubs() {
+      const lang = document.getElementById('language').value;
+      const t = translations[lang];
+      const equbList = document.getElementById('equb-list');
+      equbList.innerHTML = '';
+
+      db.collection('equbs')
+        .where('members', 'array-contains', currentUser.uid)
+        .get()
+        .then((querySnapshot) => {
+          if (querySnapshot.empty) {
+            equbList.innerHTML = `<p>${t.noEqubs}</p>`;
+            return;
+          }
+
+          querySnapshot.forEach((doc) => {
+            const equb = doc.data();
+            const equbItem = document.createElement('div');
+            equbItem.className = 'container';
+            equbItem.style.marginBottom = '10px';
+            equbItem.style.cursor = 'pointer';
+            
+            let statusBadge = '';
+            if (equb.status === 'active') {
+              statusBadge = `<span style="color:green">● ${t.active}</span>`;
+            } else {
+              statusBadge = `<span style="color:orange">● ${t.pending}</span>`;
+            }
+
+            equbItem.innerHTML = `
+              <h3>${equb.name}</h3>
+              <p>${t.amountPlaceholder}: ${equb.amount} ETB</p>
+              <p>${t.members}: ${equb.members.length}</p>
+              <p>${statusBadge}</p>
+            `;
+            
+            equbItem.addEventListener('click', () => {
+              currentEqub = doc.id;
+              loadEqubDetails();
+            });
+            
+            equbList.appendChild(equbItem);
+          });
+        });
     }
 
-    // Auto-show equb form if already logged in
+    function loadEqubDetails() {
+      const lang = document.getElementById('language').value;
+      const t = translations[lang];
+      const equbInfo = document.getElementById('equb-info');
+      const memberList = document.getElementById('member-list');
+      
+      document.getElementById('equb-details').classList.remove('hidden');
+      
+      db.collection('equbs').doc(currentEqub).get()
+        .then((doc) => {
+          const equb = doc.data();
+          
+          let payoutInfo = '';
+          if (equb.nextPayout) {
+            const payoutDate = equb.nextPayout.toDate();
+            payoutInfo = `${t.nextPayout} ${payoutDate.toLocaleDateString()}`;
+          }
+          
+          equbInfo.innerHTML = `
+            <h3>${equb.name}</h3>
+            <p>${t.amountPlaceholder}: ${equb.amount} ETB</p>
+            <p>${t.cyclePlaceholder}: ${equb.cycle} ${t.days}</p>
+            <p>${payoutInfo}</p>
+          `;
+          
+          // Load members
+          memberList.innerHTML = '';
+          equb.members.forEach((memberId) => {
+            db.collection('users').doc(memberId).get()
+              .then((userDoc) => {
+                const user = userDoc.data();
+                const memberItem = document.createElement('div');
+                memberItem.className = 'member-item';
+                memberItem.innerHTML = `
+                  <span>${user.name}</span>
+                  <span>${user.phone}</span>
+                `;
+                memberList.appendChild(memberItem);
+              });
+          });
+        });
+    }
+
+    function inviteMember() {
+      const email = document.getElementById('invite-email').value;
+      const lang = document.getElementById('language').value;
+      const t = translations[lang];
+
+      if (!email) {
+        alert(t.error + "Please enter an email");
+        return;
+      }
+
+      // In a real app, you would send an email invitation
+      // Here we just add to members array
+      db.collection('equbs').doc(currentEqub)
+        .update({
+          members: firebase.firestore.FieldValue.arrayUnion(email)
+        })
+        .then(() => {
+          alert(t.success + "Invitation sent");
+          document.getElementById('invite-email').value = '';
+          loadEqubDetails();
+        })
+        .catch((error) => {
+          alert(t.error + error.message);
+        });
+    }
+
+    function recordPayment() {
+      const amount = parseFloat(document.getElementById('payment-amount').value);
+      const lang = document.getElementById('language').value;
+      const t = translations[lang];
+
+      if (!amount) {
+        alert(t.error + "Please enter an amount");
+        return;
+      }
+
+      const payment = {
+        amount: amount,
+        date: firebase.firestore.FieldValue.serverTimestamp(),
+        userId: currentUser.uid
+      };
+
+      db.collection('equbs').doc(currentEqub)
+        .update({
+          payments: firebase.firestore.FieldValue.arrayUnion(payment)
+        })
+        .then(() => {
+          document.getElementById('payment-amount').value = '';
+          loadEqubDetails();
+          updatePaymentList();
+        })
+        .catch((error) => {
+          alert(t.error + error.message);
+        });
+    }
+
+    function updatePaymentList() {
+      const lang = document.getElementById('language').value;
+      const t = translations[lang];
+      const paymentList = document.getElementById('payment-list');
+      
+      db.collection('equbs').doc(currentEqub).get()
+        .then((doc) => {
+          const equb = doc.data();
+          paymentList.innerHTML = '';
+          
+          if (equb.payments && equb.payments.length > 0) {
+            equb.payments.forEach((payment) => {
+              const paymentItem = document.createElement('div');
+              paymentItem.className = 'payment-item';
+              
+              let dateStr = '';
+              if (payment.date) {
+                dateStr = payment.date.toDate().toLocaleDateString();
+              }
+              
+              paymentItem.innerHTML = `
+                <strong>${payment.amount} ETB</strong>
+                <span>${dateStr}</span>
+              `;
+              paymentList.appendChild(paymentItem);
+            });
+          } else {
+            paymentList.innerHTML = `<p>${t.noPayments}</p>`;
+          }
+        });
+    }
+
+    // Initialize auth state
     auth.onAuthStateChanged((user) => {
       if (user) {
-        document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('equb-container').style.display = 'block';
-        document.getElementById('payment-container').style.display = 'block';
+        currentUser = user;
+        showApp();
+        loadEqubs();
       }
     });
+
+    // Set default language
+    changeLanguage();
   </script>
 </body>
 </html>
